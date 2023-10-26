@@ -91,6 +91,7 @@ class SecStruc():
         """
         labels = {'H': 'HELIX', 'E': 'SHEET', 'C': 'COIL'}
         with open(path, 'w') as f:
+            f.write("TYPE\tLENGTH\tSTART\tEND\n")
             for feature in self.features:
                 f.write(f"{labels[feature.type]}\t{str(len(feature))}\t{str(feature.start)}\t{str(feature.end)}\n")
 
