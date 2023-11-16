@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "secdoc"
+version = "0.1.0"
+authors = [
+  { name="Igor Trujnara", email="igor.trujnara@crg.eu" },
+]
+description = "A package for working with protein secondary structure"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/itrujnara/secdoc"
+"Bug Tracker" = "https://github.com/itrujnara/secdoc/issues"
