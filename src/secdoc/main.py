@@ -1,39 +1,58 @@
 from Bio.PDB.DSSP import dssp_dict_from_pdb_file
 import subprocess
 from itertools import groupby
+from tempfile import NamedTemporaryFile
 
 class SecFeat():
-    def __init__(self, _type, _start, _end):
-        self.type = _type
-        self.start = _start
-        self.end = _end
-        self.length = self.end - self.start + 1
+    def __init__(self, _type: str, _start: int, _end: int) -> None:
+        self.type: str = _type
+        self.start: int = _start
+        self.end: int = _end
+        self.length: int = self.end - self.start + 1
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length
     
-    def __str__(self):
+    def __str__(self) -> str:
         labels = {'H': 'HELIX', 'E': 'SHEET', 'C': 'COIL'}
         return f"{labels[self.type]}\t{self.start}\t{self.end}\t{len(self)}"
 
 class SecStruc():
-    def __init__(self, pdb_path, *, dssp_path="dssp", chain="A"):
+    def __init__(self, pdb_path: str, *, dssp_path="dssp", chain="A", default_threestate = True) -> None:
         """
         Create a DSSP object from an input PDB and extract some useful variables.
+        Arguments:
+        - pdb_path - a path to the PDB file
+        - dssp_path - a path to the DSSP executable, or a command if on PATH
+        - chain - the PDB identifier of the chain to be analyzed
+        - default_threestate - whether the secondary structure should be automatically converted to three-state form with the default mappings
         """
         dssp_ver = subprocess.run(["dssp", "--version"], capture_output=True, text=True).stdout.strip().split()[2]
+
+        # remove a possibly offending line, required due to DSSP specifics
+        tmp = NamedTemporaryFile()
+        with open(pdb_path) as f:
+            tmp.write(f)
+        res = subprocess.run(["grep", "-v", "DBREF", tmp.name], capture_output = True)
+        tmp2 = tmp.NamedTemporaryFile()
+        tmp2.write(res.stdout)
         
-        self.dssp = dssp_dict_from_pdb_file(pdb_path, DSSP=dssp_path, dssp_version=dssp_ver)[0]
+        # here we actually run DSSP
+        self.dssp = dssp_dict_from_pdb_file(tmp2, DSSP=dssp_path, dssp_version=dssp_ver)[0]
         
         # filter the entries in the dict and convert to a nicer format
         self.dssp = dict([(k[1][1], v[1]) for (k,v) in self.dssp.items() if k[0] == chain])
         
         self.secseq = ''.join(self.dssp.values())
-        self.to_threestate()
+        if(default_threestate):
+            self.to_threestate()
 
         self.features = self.make_features()
 
-    def make_features(self):
+    def make_features(self) -> list[SecFeat]:
+        """
+        Convert a string of secondary structure symbols to an array of SecFeat objects. Intended for internal use.
+        """
         pos = 1
         feats = []
         for (c, group) in groupby(self.secseq):
@@ -42,11 +61,14 @@ class SecStruc():
             pos += L
         return feats
     
-    def threestate(self, *, helix="GHI", sheet="BE"):
+    def threestate(self, *, helix="GHI", sheet="BE") -> str:
         """
         Convert a DSSP secondary structure string into three-state format (helix/sheet/coil).
-        DSSP states considered helices and sheets can be changed with the helix and sheet arguments.
-        Pure - returns the threestate string.
+        Arguments:
+        - helix - a string with all symbols which should be converted into helix (H)
+        - sheet - as above, for sheets (E)
+        Note: any symbol not included in the above will be considered a coil.
+        Returns the three-state string.
         """
         out = ""
         for c in self.secseq:
@@ -58,7 +80,7 @@ class SecStruc():
                 out += 'C'
         return out
 
-    def to_threestate(self, *, helix="GHI", sheet="BE"):
+    def to_threestate(self, *, helix="GHI", sheet="BE") -> None:
         """
         Convert the structure string to three-state in-place. All arguments as in the pure function.
         """
