@@ -105,7 +105,7 @@ class SecStruc():
         labels = {'H': 'HELIX', 'E': 'SHEET', 'C': 'COIL'}
         print("TYPE\tLENGTH\tSTART\tEND")
         for feature in self.features:
-            print(f"{labels[feature.type]}\t{str(len(feature))}\t{str(feature.start)}\t{str(feature.end)}")
+            print(str(feature))
 
     def write_report(self, path):
         """
@@ -115,7 +115,7 @@ class SecStruc():
         with open(path, 'w') as f:
             f.write("TYPE\tLENGTH\tSTART\tEND\n")
             for feature in self.features:
-                f.write(f"{labels[feature.type]}\t{str(len(feature))}\t{str(feature.start)}\t{str(feature.end)}\n")
+                f.write(str(feature) + '\n')
 
     def find_features(self, feature_type, feature_start = lambda x: True, feature_end = lambda x: True, feature_len = lambda x: True):
         """
